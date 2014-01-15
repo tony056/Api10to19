@@ -33,7 +33,7 @@ public class MainActivity extends Activity {
 	private Button button;
 	private boolean doubleSwitch = false;
 	private boolean pinchSwitch = false;
-	private boolean touchSenseSwitch = false;
+	private boolean touchSenseSwitch = true;
 	private ScaleGestureDetector scaleGestureDetector;//api 10, only pinch function
 	private MyScaleGestureDetector myScaleGestureDetector;
 	@Override
@@ -42,7 +42,7 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         textView = (TextView)findViewById(R.id.textView1);
         scaleGestureDetector = new ScaleGestureDetector(this, new simpleOnScaleGestureListener());
-        button = (Button)findViewById(R.id.button1);
+        //button = (Button)findViewById(R.id.button1);
         myScaleGestureDetector = new MyScaleGestureDetector(this, new OnScaleGestureListener() {
         		@Override
         		public void onScaleEnd(ScaleGestureDetector detector) {
@@ -64,7 +64,7 @@ public class MainActivity extends Activity {
         			return false;
         		}
 		}, new Handler());
-        button.setOnClickListener(new OnClickListener() {
+        /*button.setOnClickListener(new OnClickListener() {
 			
 			@Override
 			public void onClick(View v) {
@@ -78,24 +78,24 @@ public class MainActivity extends Activity {
 		            Log.e("mode", ""+myScaleGestureDetector.getDoubleTapMode());
 		        }
 			}
-		});
+		});*/
         //Log.e("scale", "" + myScaleGestureDetector.getScaleFactor());
-        Log.e("CREATE", "create");
+        //Log.e("CREATE", "create");
     }
 	
 	 @SuppressLint("NewApi") @Override
 	   public boolean onTouchEvent(MotionEvent event) {
 	     // TODO Auto-generated method stub
-		 /*if(doubleSwitch == true){
+		 if(doubleSwitch == true){
+			 myScaleGestureDetector.setDoubleTapMode(false);
 			 myScaleGestureDetector.onTouchEvent(event);
 		 }
-		 else*/ if(pinchSwitch == true){
+		 else if(pinchSwitch == true){
 			 scaleGestureDetector.onTouchEvent(event);
 		 }
 		 else if(touchSenseSwitch == true){
-			
+			 myScaleGestureDetector.setDoubleTapMode(true);
 			 myScaleGestureDetector.onTouchEvent(event);
-			 //myScaleGestureDetector.setQuickScaleEnabled(false);
 		 }
 	     return true;
 	 }
@@ -174,6 +174,8 @@ public class MainActivity extends Activity {
         
         private boolean mModeSwitch = false;
         private int mFlag = 0;
+        private float downX;
+        private float downY;
 
         /**
          * Consistency verifier for debugging purposes.
@@ -195,8 +197,9 @@ public class MainActivity extends Activity {
 		}
 		@Override
 		public boolean onTouchEvent(MotionEvent event){
-			Log.e("PROGRESS", "1"+isInProgress()); 
+			//Log.e("PROGRESS", "1"+isInProgress()); 
 			final int action = event.getActionMasked();
+			
 			if(mQuickScaleEnabled){
 				//Log.e("ENABLE", "quick scale enabled");
 				mGestureDetector.onTouchEvent(event);
@@ -208,7 +211,11 @@ public class MainActivity extends Activity {
 	            // Reset any scale in progress with the listener.
 	            // If it's an ACTION_DOWN we're beginning a new event stream.
 	            // This means the app probably didn't give us all the events. Shame on it.
-				
+				if(mFlag == 1 && mModeSwitch == true){
+					Log.e("DDDDD", ""+downX+",,"+downY);
+					downX = event.getX();
+					downY = event.getY();
+				}
 	            if (mInProgress) {
 	                mListener.onScaleEnd(this);
 	                mInProgress = false;
@@ -219,6 +226,7 @@ public class MainActivity extends Activity {
 					mDoubleTapMode = DOUBLE_TAP_MODE_IN_PROGRESS;
 					mInProgress = true;
 					mFlag = 1;
+					Log.e("MODE SWITCH", "switch"+mModeSwitch);
 				}
 	            if (streamComplete) {
 	                //clearTouchHistory();
@@ -243,8 +251,10 @@ public class MainActivity extends Activity {
 	        if (mDoubleTapMode == DOUBLE_TAP_MODE_IN_PROGRESS) {
 	            // In double tap mode, the focal pt is always where the double tap
 	            // gesture started
-	        	Log.e("MODE", "Double Tap");
-	        	//if(mFlag > 1){
+	        	//Log.e("MODE", "Double TapQQQQQQQ");
+	        	if(mDoubleTapEvent != null){
+	        		if((mFlag == 1 && mModeSwitch == true) || (mFlag == 0 && mModeSwitch == false)){
+	        		Log.e("MODE", "Double Tap");
 	        		focusX = mDoubleTapEvent.getX();
 	        		focusY = mDoubleTapEvent.getY();
 	        		if (event.getY() < focusY) {
@@ -252,10 +262,29 @@ public class MainActivity extends Activity {
 	        		} else {
 	        			mEventBeforeOrAboveStartingGestureEvent = false;
 	        		}
-	        	//}else{
-//	        		focusX = 0;
-//		            focusY = 0;
-//	        	}
+	        		}
+	        		else{
+		        		Log.e("NULL", "null, "+mFlag);
+		        		focusX = downX;
+			            focusY = downY;
+			            if (event.getY() < focusY) {
+		        			mEventBeforeOrAboveStartingGestureEvent = true;
+		        		} else {
+		        			mEventBeforeOrAboveStartingGestureEvent = false;
+		        		}
+			            //mFlag = 1;
+		        	}
+	        	}else{
+	        		Log.e("NULL", "null, "+mFlag);
+	        		focusX = downX;
+		            focusY = downY;
+		            if (event.getY() < focusY) {
+	        			mEventBeforeOrAboveStartingGestureEvent = true;
+	        		} else {
+	        			mEventBeforeOrAboveStartingGestureEvent = false;
+	        		}
+		            //mFlag = 1;
+	        	}
 	            
 	        } else {
 	            for (int i = 0; i < count; i++) {
@@ -313,7 +342,7 @@ public class MainActivity extends Activity {
 	        }
 	        if(mModeSwitch == true && mFlag % 2 == 1){
 	        	mInProgress = false;
-	        	mFlag++;
+	        	mFlag = 1;
 	        }
 	        final int minSpan = inDoubleTapMode() ? mSpanSlop : mMinSpan;
 	        if (!mInProgress && span >=  minSpan &&
@@ -345,10 +374,15 @@ public class MainActivity extends Activity {
 	                mPrevSpan = mCurrSpan;
 	                mPrevTime = mCurrTime;
 	            }
+	            
+	            
+	            if(mFlag == 1) mFlag = 0;
 	        }
+			
+			
 	        Log.e("BUG", ""+mInProgress+", "+mInitialSpan+", "+mDoubleTapMode+",, "+mCurrSpan+"!! "+mPrevSpan);
 	        textView.setText(String.valueOf(this.getScaleFactor()));
-	        button.setText(String.valueOf(myScaleGestureDetector.getFocusX())+", "+String.valueOf(myScaleGestureDetector.getFocusY()));
+	        //button.setText(String.valueOf(myScaleGestureDetector.getFocusX())+", "+String.valueOf(myScaleGestureDetector.getFocusY()));
 	        return true;
 			
 		}
@@ -367,15 +401,19 @@ public class MainActivity extends Activity {
 		                        		mDoubleTapMode = DOUBLE_TAP_MODE_IN_PROGRESS;
 		                        		return true;
 		                        	}
-		                        	/*@Override
+		                        	@Override
 		                        	public boolean onDown(MotionEvent e){
-		                        		mDoubleTapEvent = e;
-		                        		mDoubleTapMode = DOUBLE_TAP_MODE_IN_PROGRESS;
+		                        		if(mFlag == 0 && mModeSwitch == true){
+		                        			Log.e("TOUCHHHHHHH", ""+mFlag);
+		                        			mDoubleTapEvent = e;
+		                        			mDoubleTapMode = DOUBLE_TAP_MODE_IN_PROGRESS;
+		                        			mFlag = 1;
+		                        		}
 		                        		return true;
-		                        	}*/
+		                        	}
 		                    	};
 		                mGestureDetector = new GestureDetector(mContext, gestureListener, mHandler);
-		                Log.e("Create", "gestureListener");
+		                //Log.e("Create", "gestureListener");
 		        }/*else{
 		        	GestureDetector.SimpleOnGestureListener gestureListener =
 	        				new GestureDetector.SimpleOnGestureListener() {
